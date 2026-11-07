@@ -1,0 +1,15 @@
+*.log
+*.sav
+*.uasset
+*.uexp
+*.ubulk
+*.pak
+*.utoc
+*.ucas
+*.exe
+*.dll
+*.dmp
+node_modules/
+backups/
+.env
+.env.*

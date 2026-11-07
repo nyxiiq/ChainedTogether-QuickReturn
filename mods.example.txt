@@ -1,0 +1,5 @@
+# Merge the following line into your existing Mods/mods.txt; do not replace it.
+QuickReturnHighestPoint : 1
+
+# Optional diagnostic Mod, disabled by default:
+QuickReturnTrace : 0
