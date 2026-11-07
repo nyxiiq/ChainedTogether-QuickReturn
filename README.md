@@ -1,5 +1,9 @@
 # ChainedTogether QuickReturn
 
+[简体中文](#简体中文) | [English](#english)
+
+## 简体中文
+
 为《Chained Together》提供默认 **F6 返回最高点**快捷键的 UE4SS Lua Mod。
 
 当前源码版本 **v0.1.5**。2026-11-07 玩家已实际验证 F6 能返回最高点，日志同时确认原生救援事件和后续救援执行。菜单拦截及三秒冷却拒绝也有实测记录。
@@ -79,3 +83,87 @@ QuickReturnTrace : 1
 - 本地开发阶段曾通过 71 项模拟测试、873 个断言；这些测试不能替代实际游戏验证。本仓库未打包测试运行器、第三方依赖或带游戏资产的研究目录。
 
 本项目为非官方 Mod，与游戏开发商或 UE4SS 项目无隶属关系。UE4SS 依赖由其自身许可证约束。
+
+---
+
+## English
+
+A UE4SS Lua Mod for **Chained Together** that binds **F6** to the game's native return-to-highest-point feature.
+
+Current source version: **v0.1.5**. On November 7, 2026, a player confirmed that F6 successfully returned their character to the highest point. Runtime logs also confirmed the native rescue request and its subsequent execution. Menu blocking and the three-second cooldown were tested in game.
+
+### Features
+
+- Requests the game's native return flow without opening the Esc menu.
+- Uses the highest point reported by the game and preserves native effects, delay, and rescue behavior.
+- Retains native restrictions, including game mode, vehicles, valid rescue points, and authority checks. The Mod additionally requires a self-hosted session with exactly one local player.
+- Includes guards for menus, text focus, map transitions, initialization, and cooldown. An API error disables the hotkey for the current game process to prevent automatic retries.
+
+This repository contains our Lua Mod code and documentation. It does not include game source code, extracted assets, saves, coordinate data, UE4SS DLLs, or third-party analysis tools.
+
+### Tested environment
+
+| Component | Version |
+|---|---|
+| Game Steam BuildID | 26273336 |
+| Unreal Engine | 5.3.2 |
+| UE4SS | 3.0.1 |
+| Mod | 0.1.5 |
+
+Compatibility must be revalidated after game or framework updates. The current script rejects UE4SS versions other than 3.0.1.
+
+### Installation
+
+1. Exit the game completely.
+2. Obtain UE4SS 3.0.1 from the [official release page](https://github.com/UE4SS-RE/RE-UE4SS/releases/tag/v3.0.1) and follow its instructions to install it in the game's `ChainedTogether/Binaries/Win64` directory. The framework is not bundled here.
+3. Copy this repository's `Mods/QuickReturnHighestPoint` folder into the `Mods` folder in that directory.
+4. Back up your existing `Mods/mods.txt`, then add or update the following line while preserving all other Mod entries:
+
+   ```text
+   QuickReturnHighestPoint : 1
+   ```
+
+5. Launch the game and test in a session you host with no other players.
+
+Merge the configuration example into your existing mods.txt; do not overwrite the file. Replace Lua files only while the game is closed.
+
+### Usage
+
+Select a mode where the native highest-point return feature is available. Close menus, finish text input, keep the game window focused, and briefly press **F6**. The native flow includes a delay of approximately one second. Requests have a three-second cooldown.
+
+This version has no key-binding settings interface. F6 is registered through `RegisterKeyBind(Key.F6, key_pressed)`; integration with the native settings menu is future work. If another Mod has already registered F6, this Mod stops registration rather than replacing that binding.
+
+### Optional diagnostic Mod
+
+`optional/QuickReturnTrace` contains four targeted Blueprint hooks written for this project. It only logs the native button, query, rescue request, and rescue execution. It does not request teleportation or modify parameters. To use it for troubleshooting, copy the folder into the game's `Mods` directory and add:
+
+```text
+QuickReturnTrace : 1
+```
+
+Each target logs up to 16 hits per game launch. Once that limit is reached, missing log entries do not mean that events stopped executing. Normal use does not require this diagnostic Mod.
+
+### Uninstallation and recovery
+
+Exit the game and change `QuickReturnHighestPoint : 1` to `QuickReturnHighestPoint : 0` in `Mods/mods.txt` to disable it. To remove its files, delete only the `Mods/QuickReturnHighestPoint` folder. If you installed the optional Trace Mod, disable its entry and remove only its own folder as well.
+
+Preserve all other Mod settings. Installing or removing this Mod does not require changes to the game's PAK files, executable, or saves. Follow the framework's own instructions if you also want to uninstall UE4SS, which may be required by other Mods.
+
+### Implementation notes
+
+UE4SS passes the input event to the game thread. For each request, the script resolves the current local controller, GameState, and highest-point object, checks the required conditions, and invokes the game's `GS_Game.RescueEvent`. Null object arguments use a UObject wrapper verified to be invalid and have address zero, for compatibility with UE4SS 3.0.1's parameter bridge.
+
+The key fix in v0.1.5 removes a second input gate: a later `PlayerController.IsInputKeyDown` sample cannot reliably validate an event that UE4SS has already received. During testing, the initial game-side sample could be false for both brief and held presses, causing previous versions to exit before requesting teleportation. Removing this gate while retaining the other guards enabled the first successful in-game return.
+
+The Mod does not simulate mouse clicks, write character positions directly, or calculate highest-point coordinates. Asset paths and function identifiers in the code refer to game runtime objects; their implementations and assets are not included.
+
+### Validation and known limitations
+
+- A single F6 return was confirmed by the player and supported by logs of the native query, request, and delayed rescue execution.
+- Menu blocking and cooldown rejection were tested in game. The player reported no visible repeated teleportation while holding F6, but physical key-down/key-up times were not correlated with every callback. Exactly one request for an arbitrarily long hold is not guaranteed.
+- Text-focus and map-transition guards have code and mock-test coverage; all in-game edge cases have not yet been validated.
+- UE4SS may also dispatch hotkeys while its debug window is focused. This focus boundary is not fully guarded in this version. Keep the game window focused when using the hotkey.
+- Joining another player's session and multiplayer use are not supported.
+- Local development checks passed 71 mock tests with 873 assertions. These do not replace in-game validation. Test runners, third-party dependencies, and research directories containing game assets are not bundled in this repository.
+
+This is an unofficial Mod and is not affiliated with the game's developers or the UE4SS project. UE4SS is governed by its own license.
